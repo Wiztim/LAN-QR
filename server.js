@@ -1,6 +1,6 @@
+const fs = require("fs")
 const express = require('express')
 const multer  = require('multer')
-//const upload = multer({ dest: 'frontend/uploads/'})
 var storage = multer.diskStorage({
   destination: function (req, file, callback) {
       callback(null, './frontend/uploads');
@@ -25,14 +25,12 @@ app.post('/upload', upload.single('file'), (req, res) => {
   //console.log('Received POST request with data:', req.file)
   filename = req.file.originalname
 
-  // save the file
-
   // create the qr png
   var ip = req.get('origin').replace('http://', '')
   var filenameQR = filename.slice(0, -4) + 'QR'
   var qrPath = ip + '/uploads/' + filename
   var qrpng = qr.image(qrPath, {type:'png'})
-  qrpng.pipe(require('fs').createWriteStream('./frontend/uploads/' + filenameQR + '.png'))
+  qrpng.pipe(fs.createWriteStream('./frontend/uploads/' + filenameQR + '.png'))
 
   // return the qr png url
   var qrpngURL = '/uploads/' + filenameQR + '.png'
@@ -51,4 +49,15 @@ app.get('/frontend/uploads/*', (req, res) => {
 
 app.listen(port, () => {
   console.log(`Server is running at ${port}`)
-});
+
+  const folder = './frontend/uploads/'
+  fs.readdir(folder, (err, files) => {
+    if (err) throw err;
+  
+    for (const file of files) {
+      fs.unlink(folder + file, (err) => {
+        if (err) throw err;
+      })
+    }
+  })
+})
